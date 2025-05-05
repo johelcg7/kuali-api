@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id               Int    @id @default(autoincrement())
+  name             String
+  RUC              Int?
+  sector           String
+  country          String
+  employee_numbers Int?
+  leads            Lead[]
+}
+
+model User {
+  id            Int    @id @default(autoincrement())
+  password_hash String
+  username      String
+  role          String
+  unique_code   String
+  leads         Lead[]
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String
+  location    String
+  fecha       DateTime
+  description String
+  leads       Lead[]
+}
+
+model Lead {
+  id         Int    @id @default(autoincrement())
+  name       String
+  linkedin   String
+  phone      String
+  email      String
+  company    String
+  job_title  String
+  work_area  String
+  status     String
+  company_id Int
+  event_id   Int
+  user_id    Int
+
+  companyRef  Company      @relation(fields: [company_id], references: [id])
+  event       Event        @relation(fields: [event_id], references: [id])
+  user        User         @relation(fields: [user_id], references: [id])
+  contactings Contacting[]
+}
+
+model Template {
+  id          Int          @id @default(autoincrement())
+  name        String
+  body        String
+  created_at  DateTime
+  deleted_at  DateTime?
+  contactings Contacting[]
+}
+
+model Contacting {
+  id              Int      @id @default(autoincrement())
+  lead_id         Int
+  template_id     Int
+  update_contacts DateTime
+  statusventa     String
+
+  lead     Lead     @relation(fields: [lead_id], references: [id])
+  template Template @relation(fields: [template_id], references: [id])
+}
