@@ -13,8 +13,6 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-<<<<<<< Updated upstream
-=======
 
 app.use(cors({
   origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
@@ -23,7 +21,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
 }));
 
->>>>>>> Stashed changes
 app.use(
   session({
     secret: 'your_secret_key',

@@ -1,16 +1,11 @@
 import express from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-<<<<<<< Updated upstream
-=======
 import session from 'express-session';
 import cors from 'cors';
->>>>>>> Stashed changes
 
 const router = express.Router();
 
-<<<<<<< Updated upstream
-=======
 app.use(cors({
   origin: 'http://localhost:5173', // Permite solicitudes desde el frontend
 }));
@@ -26,7 +21,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
->>>>>>> Stashed changes
 // Configurar la estrategia de Google
 passport.use(
   new GoogleStrategy(
