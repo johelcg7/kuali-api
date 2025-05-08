@@ -6,12 +6,24 @@ import eventsRoutes from './routes/eventsRoutes.js';
 import session from 'express-session';
 import passport from 'passport';
 import authRoutes from './routes/authRoutes.js';
+import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+<<<<<<< Updated upstream
+=======
+
+app.use(cors({
+  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  credentials: true, // Habilitar credenciales
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
+}));
+
+>>>>>>> Stashed changes
 app.use(
   session({
     secret: 'your_secret_key',

@@ -1,9 +1,32 @@
 import express from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+<<<<<<< Updated upstream
+=======
+import session from 'express-session';
+import cors from 'cors';
+>>>>>>> Stashed changes
 
 const router = express.Router();
 
+<<<<<<< Updated upstream
+=======
+app.use(cors({
+  origin: 'http://localhost:5173', // Permite solicitudes desde el frontend
+}));
+
+app.use(
+  session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+>>>>>>> Stashed changes
 // Configurar la estrategia de Google
 passport.use(
   new GoogleStrategy(
@@ -34,9 +57,10 @@ router.get(
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
+// Manejo de errores en el callback de Google
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/login' }),
   (req, res) => {
     // Redirigir al frontend después de iniciar sesión
     res.redirect('http://localhost:5173/leads');

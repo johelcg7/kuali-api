@@ -3,9 +3,13 @@ import { LeadsService } from '../services/leadsService.js';
 export const getLeads = async (req, res) => {
   try {
     const leads = await LeadsService.getAll();
+    if (!Array.isArray(leads)) {
+      throw new Error('La respuesta no es un array');
+    }
     res.json(leads);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error al obtener los leads:', error);
+    res.status(500).json({ error: 'Error al obtener los leads', details: error.message });
   }
 };
 
