@@ -7,6 +7,8 @@ import session from 'express-session';
 import passport from 'passport';
 import authRoutes from './routes/authRoutes.js';
 import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;

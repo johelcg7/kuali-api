@@ -3,14 +3,18 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
 import cors from 'cors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const router = express.Router();
 
-app.use(cors({
-  origin: 'http://localhost:5173', // Permite solicitudes desde el frontend
+router.use(cors({
+  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  credentials: true, // Habilitar credenciales
 }));
 
-app.use(
+router.use(
   session({
     secret: 'your_secret_key',
     resave: false,
@@ -18,19 +22,18 @@ app.use(
   })
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
+router.use(passport.initialize());
+router.use(passport.session());
 
 // Configurar la estrategia de Google
 passport.use(
   new GoogleStrategy(
     {
-      clientID: '',
-      clientSecret: '',
-      callbackURL: '',
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: '/api/auth/google/callback',
     },
     (accessToken, refreshToken, profile, done) => {
-      // Aquí puedes guardar el usuario en la base de datos
       const user = {
         googleId: profile.id,
         displayName: profile.displayName,
@@ -45,20 +48,22 @@ passport.use(
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-// Rutas de autenticación
+// Ruta para iniciar la autenticación con Google
 router.get(
   '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: true,
+  })
 );
 
-// Manejo de errores en el callback de Google
+// Ruta de callback para manejar la respuesta de Google
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/login' }),
-  (req, res) => {
-    // Redirigir al frontend después de iniciar sesión
-    res.redirect('http://localhost:5173/leads');
-  }
+  passport.authenticate('google', {
+    successRedirect: 'http://localhost:5173/leads', // Redirigir al frontend después de autenticarse
+    failureRedirect: 'http://localhost:5173/login', // Redirigir en caso de error
+  })
 );
 
 export default router;
