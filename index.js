@@ -8,6 +8,8 @@ import passport from 'passport';
 import authRoutes from './routes/authRoutes.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './swagger.json' assert { type: 'json' };
 dotenv.config();
 
 const app = express();
@@ -15,6 +17,9 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+
+//Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(cors({
   origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
@@ -48,5 +53,5 @@ app.get('/', (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Estoy vivo en http://localhost:${port}`);
 });

@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export const LeadsService = {
   getAll: async () => {
-    return prisma.leads.findMany();
+    return prisma.leads.findMany({include:{company:true}});
   },
   getById: async (id) => {
     return prisma.leads.findUnique({ where: { id } });

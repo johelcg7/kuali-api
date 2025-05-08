@@ -10,10 +10,13 @@ import {
 const router = express.Router();
 
 // Rutas CRUD
-router.get('/', getUsers);
-router.get('/:id', getUserById);
-router.post('/', createUser);
-router.put('/:id', updateUser);
-router.delete('/:id', deleteUser);
+router.get('/', getUsers); // Obtener todos los usuarios
+router.get('/:id', getUserById); // Obtener un usuario por ID
+router.post('/', createUser); // Crear un nuevo usuario
+router.put('/:id', updateUser); // Actualizar un usuario existente
+router.delete('/:id', deleteUser); // Eliminar un usuario
+
+// Ruta de inicio de sesión
+router.post("/login", loginUser);
 
 export default router;

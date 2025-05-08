@@ -1,5 +1,29 @@
 import { UsersService } from '../services/usersService.js';
 
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Buscar el usuario por email
+    const user = await UsersService.getByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Verificar la contraseña (esto asume que la contraseña no está encriptada)
+    if (user.password_google !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Si todo está bien, devolver los datos del usuario (puedes incluir un token aquí si usas JWT)
+    res.json({ message: "Login successful", user });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 // Obtener todos los usuarios
 export const getUsers = async (req, res) => {
   try {
@@ -24,14 +48,13 @@ export const getUserById = async (req, res) => {
 
 // Crear un nuevo usuario
 export const createUser = async (req, res) => {
-  const { username, role, password_hash, unique_code, company_id } = req.body;
+  const { username, name, password_google, unique_code } = req.body;
   try {
     const newUser = await UsersService.create({
       username,
-      role,
-      password_hash,
+      name,
+      password_google,
       unique_code,
-      company_id,
     });
     res.status(201).json(newUser);
   } catch (error) {
@@ -42,14 +65,13 @@ export const createUser = async (req, res) => {
 // Actualizar un usuario existente
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { username, role, password_hash, unique_code, company_id } = req.body;
+  const { username, name, password_google, unique_code } = req.body;
   try {
     const updatedUser = await UsersService.update(parseInt(id), {
       username,
-      role,
-      password_hash,
+      name,
+      password_google,
       unique_code,
-      company_id,
     });
     res.json(updatedUser);
   } catch (error) {
