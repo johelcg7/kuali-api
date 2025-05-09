@@ -3,6 +3,7 @@ import companiesRoutes from './routes/companiesRoutes.js';
 import leadsRoutes from './routes/leadsRoutes.js';
 import usersRoutes from './routes/usersRoutes.js';
 import eventsRoutes from './routes/eventsRoutes.js';
+import templatesRoutes from './routes/templatesRouter.js';
 import session from 'express-session';
 import passport from 'passport';
 import authRoutes from './routes/authRoutes.js';
@@ -41,8 +42,7 @@ app.use(passport.session());
 // Routes
 app.use('/api/companies', companiesRoutes);
 app.use('/api/leads', leadsRoutes);
-
-// app.use('/api/templates', templatesRoutes);
+app.use('/api/templates', templatesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/auth', authRoutes);

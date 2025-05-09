@@ -10,13 +10,14 @@ dotenv.config();
 const router = express.Router();
 
 router.use(cors({
-  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  origin: 'http://http://localhost:5173', // Permitir solicitudes desde el frontend
   credentials: true, // Habilitar credenciales
 }));
 
 router.use(
   session({
-    secret: 'your_secret_key',
+    // La contraseña secreta está en el archivo .env
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -31,7 +32,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/auth/google/callback',
+      callbackURL: '/api/auth/google/callback', // URL de callback
     },
     (accessToken, refreshToken, profile, done) => {
       const user = {
