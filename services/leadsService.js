@@ -105,10 +105,7 @@ export const LeadsService = {
         include: {
           users: true,
           company: true,
-          events: true
-        },
-        orderBy: {
-          created_at: 'desc'
+          events: true,
         }
       });
     } catch (error) {
