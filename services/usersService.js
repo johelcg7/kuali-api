@@ -18,12 +18,12 @@ export const UsersService = {
     });
   },
 
-    // Obtener un usuario por email
-    getByEmail: async (email) => {
-      return prisma.users.findUnique({
-        where: { email },
-      });
-    },
+  // Obtener un usuario por email
+  getByEmail: async (email) => {
+    return prisma.users.findUnique({
+      where: { email },
+    });
+  },
 
   // Crear un nuevo usuario
   create: async (data) => {

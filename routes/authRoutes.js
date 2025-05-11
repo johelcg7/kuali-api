@@ -10,7 +10,10 @@ dotenv.config();
 const router = express.Router();
 
 router.use(cors({
-  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5004'
+  ],
   credentials: true, // Habilitar credenciales
 }));
 

@@ -20,6 +20,7 @@ export const getLeadById = async (req, res) => {
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     res.json(lead);
   } catch (error) {
+    console.error('Error al obtener el lead:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -30,6 +31,7 @@ export const createLead = async (req, res) => {
     const newLead = await LeadsService.create(data);
     res.status(201).json(newLead);
   } catch (error) {
+    console.error('Error al crear el lead:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -38,10 +40,38 @@ export const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
-    const updatedLead = await LeadsService.update(parseInt(id), data);
+
+    console.log('Datos recibidos en updateLead:', { id, data });
+
+    // Validar que el ID sea un número válido
+    const leadId = parseInt(id);
+    if (isNaN(leadId)) {
+      return res.status(400).json({ 
+        error: 'ID inválido',
+        details: `El ID proporcionado "${id}" no es un número válido`
+      });
+    }
+
+    // Validar el status
+    const validStatus = ['inicio', 'en seguimiento', 'cerrado'];
+    if (data.status && !validStatus.includes(data.status)) {
+      return res.status(400).json({ 
+        error: 'Status inválido',
+        details: `El status "${data.status}" no es válido. Valores permitidos: ${validStatus.join(', ')}`,
+        validStatus
+      });
+    }
+
+    const updatedLead = await LeadsService.update(leadId, data);
+    console.log('Lead actualizado:', updatedLead);
+    
     res.json(updatedLead);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error al actualizar el lead:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar el lead',
+      details: error.message
+    });
   }
 };
 
@@ -51,6 +81,7 @@ export const deleteLead = async (req, res) => {
     await LeadsService.delete(parseInt(id));
     res.status(204).end();
   } catch (error) {
+    console.error('Error al eliminar el lead:', error);
     res.status(500).json({ error: error.message });
   }
 };

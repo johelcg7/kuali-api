@@ -48,10 +48,10 @@ export const getUserById = async (req, res) => {
 
 // Crear un nuevo usuario
 export const createUser = async (req, res) => {
-  const { username, name, password_google, unique_code } = req.body;
+  const { email, name, password_google, unique_code } = req.body;
   try {
     const newUser = await UsersService.create({
-      username,
+      email,
       name,
       password_google,
       unique_code,
@@ -65,10 +65,10 @@ export const createUser = async (req, res) => {
 // Actualizar un usuario existente
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { username, name, password_google, unique_code } = req.body;
+  const { email, name, password_google, unique_code } = req.body;
   try {
     const updatedUser = await UsersService.update(parseInt(id), {
-      username,
+      email,
       name,
       password_google,
       unique_code,

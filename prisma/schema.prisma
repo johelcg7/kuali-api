@@ -31,6 +31,7 @@ model Leads {
   company_id Int       @map("company_id")
   event_id   Int       @map("event_id")
   user_id    Int       @map("user_id")
+  created_at DateTime  @default(now()) @map("created_at")
   company    Companies @relation(fields: [company_id], references: [id])
   events     Events    @relation(fields: [event_id], references: [id])
   users      Users     @relation("UserLeads", fields: [user_id], references: [id])
@@ -49,7 +50,6 @@ model Users {
 
   @@map("users")
 }
-
 
 model ContactLog {
   id              Int      @id @default(autoincrement()) @map("id")
@@ -95,3 +95,5 @@ model Meets {
 
   @@map("meets")
 }
+
+
