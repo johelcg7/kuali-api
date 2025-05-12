@@ -16,7 +16,8 @@ app.use(cors({
   origin: 'http://localhost:5004',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['set-cookie']
 }));
 
 app.use(express.json());
@@ -41,6 +42,9 @@ app.use(passport.session());
 
 // Middleware para verificar autenticación
 const requireAuth = (req, res, next) => {
+  console.log('Session:', req.session);
+  console.log('Usuario autenticado:', !!req.session.userId);
+  
   if (!req.session.userId) {
     return res.status(401).json({ error: 'No autorizado' });
   }
