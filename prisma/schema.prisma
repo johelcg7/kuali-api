@@ -21,31 +21,33 @@ model Companies {
 }
 
 model Leads {
-  id         Int       @id @default(autoincrement()) @map("id")
-  name       String    @map("name")
-  email      String    @map("email")
-  phone      String?   @map("phone")
-  linkedin   String?   @map("linkedin")
-  job_role   String?   @map("job_role")
-  work_area  String?   @map("work_area")
-  company_id Int       @map("company_id")
-  event_id   Int       @map("event_id")
-  user_id    Int       @map("user_id")
-  company    Companies @relation(fields: [company_id], references: [id])
-  events     Events    @relation(fields: [event_id], references: [id])
-  users      Users     @relation("UserLeads", fields: [user_id], references: [id])
+  id           Int       @id @default(autoincrement()) @map("id")
+  name         String    @map("name")
+  email        String    @map("email")
+  phone        String?   @map("phone")
+  linkedin     String?   @map("linkedin")
+  job_role     String?   @map("job_role")
+  work_area    String?   @map("work_area")
+  company_id   Int       @map("company_id")
+  event_id     Int       @map("event_id")
+  user_id      Int       @map("user_id")
+  created_at   DateTime  @default(now()) @map("created_at")
+  company      Companies @relation(fields: [company_id], references: [id])
+  events       Events    @relation(fields: [event_id], references: [id])
+  users        Users     @relation("UserLeads", fields: [user_id], references: [id])
 
   @@map("leads")
 }
 
 model Users {
-  id              Int     @id @default(autoincrement()) @map("id")
-  email        String  @unique @map("email") @db.VarChar(100) // Campo único
-  name            String  @map("name") @db.VarChar(50)
-  password_google String  @map("password_google")
-  unique_code     String  @map("unique_code")
-  leads           Leads[] @relation("UserLeads") // Un usuario puede tener varios leads
-  
+  id              Int      @id @default(autoincrement()) @map("id")
+  email           String   @unique @map("email") @db.VarChar(100)
+  name            String   @map("name") @db.VarChar(50)
+  password        String?  @map("password") // Nueva columna para contraseñas hasheadas
+  password_google String?  @map("password_google") // Mantenemos temporalmente para migración
+  googleId        String?  @unique @map("google_id") // ID de Google para OAuth
+  unique_code     String   @map("unique_code")
+  leads           Leads[]  @relation("UserLeads")
 
   @@map("users")
 }

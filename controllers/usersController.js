@@ -4,25 +4,42 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Buscar el usuario por email
-    const user = await UsersService.getByEmail(email);
+    const user = await UsersService.verifyCredentials(email, password);
+    
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(401).json({ error: "Credenciales inválidas" });
     }
 
-    // Verificar la contraseña (esto asume que la contraseña no está encriptada)
-    if (user.password_google !== password) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    // Si todo está bien, devolver los datos del usuario (puedes incluir un token aquí si usas JWT)
-    res.json({ message: "Login successful", user });
+    // Establecer la sesión
+    req.session.userId = user.id;
+    req.session.userEmail = user.email;
+    
+    // Asegurarse de que la sesión se guarde antes de responder
+    req.session.save(err => {
+      if (err) {
+        console.error('Error al guardar la sesión:', err);
+        return res.status(500).json({ error: "Error al iniciar sesión" });
+      }
+      
+      // Devolver respuesta exitosa
+      res.json({ 
+        message: "Login exitoso", 
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name
+        }
+      });
+    });
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error durante el login:", error);
+    // Si es un error específico de autenticación con Google, devolver el mensaje
+    if (error.message.includes('Google')) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-
 
 // Obtener todos los usuarios
 export const getUsers = async (req, res) => {
@@ -48,15 +65,17 @@ export const getUserById = async (req, res) => {
 
 // Crear un nuevo usuario
 export const createUser = async (req, res) => {
-  const { email, name, password_google, unique_code } = req.body;
+  const { email, name, password, unique_code } = req.body;
   try {
     const newUser = await UsersService.create({
       email,
       name,
-      password_google,
+      password,
       unique_code,
     });
-    res.status(201).json(newUser);
+    // No devolver la contraseña en la respuesta
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
   } catch (error) {
     res.status(500).json({ error: 'Error al crear el usuario.' });
   }
@@ -65,15 +84,17 @@ export const createUser = async (req, res) => {
 // Actualizar un usuario existente
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { email, name, password_google, unique_code } = req.body;
+  const { email, name, password, unique_code } = req.body;
   try {
     const updatedUser = await UsersService.update(parseInt(id), {
       email,
       name,
-      password_google,
+      password,
       unique_code,
     });
-    res.json(updatedUser);
+    // No devolver la contraseña en la respuesta
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar el usuario.' });
   }

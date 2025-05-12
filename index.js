@@ -23,24 +23,24 @@ const swaggerDocument = JSON.parse(
 );
 
 const app = express();
-const port = process.env.PORT || 3003;  // Cambiado a 3003
+const port = process.env.PORT || 3003;
 
 // Middleware
 app.use(express.json());
 
-//Swagger
+// Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5004'
-  ],
+  origin: 'http://localhost:5004',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+  exposedHeaders: ['set-cookie']
 }));
 
+// Session configuration
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your_secret_key',
@@ -69,7 +69,15 @@ app.get('/', (req, res) => {
   res.send('API de Kuali CRM está funcionando!');
 });
 
-// Start the server
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    message: err.message
+  });
+});
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en http://localhost:${port}`);
   console.log(`Documentación API disponible en http://localhost:${port}/api-docs`);

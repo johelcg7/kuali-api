@@ -6,15 +6,17 @@ import leadsRoutes from '../routes/leadsRoutes.js';
 import usersRoutes from '../routes/usersRoutes.js';
 import companiesRoutes from '../routes/companiesRoutes.js';
 import eventsRoutes from '../routes/eventsRoutes.js';
+import authRoutes from '../routes/authRoutes.js';
 
 const app = express();
 
 // Configuración de CORS
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'http://localhost:5004',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // Middleware para parsear JSON
@@ -27,9 +29,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // false para desarrollo, true para producción con HTTPS
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    path: '/'
   }
 }));
 
@@ -37,13 +40,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Middleware de autenticación temporal para desarrollo
-app.use((req, res, next) => {
-  req.isAuthenticated = () => true; // Simular que el usuario está autenticado
-  next();
-});
-
 // Usar las rutas
+app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/companies', companiesRoutes);
@@ -51,15 +49,10 @@ app.use('/api/events', eventsRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err.stack);
   res.status(err.status || 500).json({
     message: err.message || 'Error interno del servidor'
   });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
 
 export default app;
