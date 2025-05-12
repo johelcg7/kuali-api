@@ -40,12 +40,24 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Usar las rutas
+// Middleware para verificar autenticación
+const requireAuth = (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  next();
+};
+
+// Rutas públicas
 app.use('/api/auth', authRoutes);
-app.use('/api/leads', leadsRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/companies', companiesRoutes);
-app.use('/api/events', eventsRoutes);
+app.use('/api/users/login', usersRoutes);
+
+// Rutas protegidas
+app.use('/api/leads', requireAuth, leadsRoutes);
+app.use('/api/companies', requireAuth, companiesRoutes);
+app.use('/api/events', requireAuth, eventsRoutes);
+// Las rutas de usuarios que no son login también requieren autenticación
+app.use('/api/users', requireAuth, usersRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

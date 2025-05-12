@@ -28,8 +28,31 @@ export const UsersService = {
 
   // Crear un nuevo usuario
   create: async (userData) => {
-    // Si se proporciona contraseña, hashearla
+    // Validar datos requeridos
+    if (!userData.email || !userData.name) {
+      throw new Error('El email y nombre son requeridos');
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userData.email)) {
+      throw new Error('El formato del email no es válido');
+    }
+
+    // Verificar si el email ya existe
+    const existingUser = await prisma.users.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      throw new Error('El email ya está registrado');
+    }
+
+    // Si se proporciona contraseña, validar y hashear
     if (userData.password) {
+      if (userData.password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres');
+      }
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       userData.password = hashedPassword;
     }
@@ -46,8 +69,39 @@ export const UsersService = {
 
   // Actualizar un usuario existente
   update: async (id, data) => {
-    // Si se está actualizando la contraseña, hashearla
+    // Validar que el usuario existe
+    const existingUser = await prisma.users.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Si se está actualizando el email, validar formato y unicidad
+    if (data.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.email)) {
+        throw new Error('El formato del email no es válido');
+      }
+
+      const emailExists = await prisma.users.findFirst({
+        where: {
+          email: data.email,
+          NOT: { id },
+        },
+      });
+
+      if (emailExists) {
+        throw new Error('El email ya está en uso por otro usuario');
+      }
+    }
+
+    // Si se está actualizando la contraseña, validar y hashear
     if (data.password) {
+      if (data.password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres');
+      }
       const hashedPassword = await bcrypt.hash(data.password, 10);
       data.password = hashedPassword;
     }
@@ -60,11 +114,24 @@ export const UsersService = {
 
   // Eliminar un usuario
   delete: async (id) => {
+    // Validar que el usuario existe
+    const existingUser = await prisma.users.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
     return prisma.users.delete({ where: { id } });
   },
 
   // Verificar credenciales de usuario
   verifyCredentials: async (email, password) => {
+    if (!email || !password) {
+      throw new Error('Email y contraseña son requeridos');
+    }
+
     const user = await prisma.users.findUnique({
       where: { email },
     });
@@ -91,7 +158,7 @@ export const UsersService = {
       return user;
     } catch (error) {
       console.error('Error al verificar la contraseña:', error);
-      return null;
+      throw new Error('Error en la verificación de credenciales');
     }
   },
 };
