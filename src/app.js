@@ -1,12 +1,13 @@
 import express from 'express';
+import cors from 'cors';
 import session from 'express-session';
 import passport from 'passport';
-import cors from 'cors';
 import leadsRoutes from '../routes/leadsRoutes.js';
-import usersRoutes from '../routes/usersRoutes.js';
+import authRouter from '../routes/authRoutes.js';
+import usersRouter from '../routes/usersRoutes.js';
 import companiesRoutes from '../routes/companiesRoutes.js';
 import eventsRoutes from '../routes/eventsRoutes.js';
-import authRoutes from '../routes/authRoutes.js';
+import templatesRouter from '../routes/templatesRouter.js';
 
 const app = express();
 
@@ -15,21 +16,19 @@ app.use(cors({
   origin: 'http://localhost:5004',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
-  exposedHeaders: ['Set-Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware para parsear JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Configuración de sesión
+// Configuración de sesiones
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your_secret_key',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: false, // false para desarrollo, true para producción con HTTPS
+    httpOnly: true,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
     path: '/'
@@ -49,22 +48,13 @@ const requireAuth = (req, res, next) => {
 };
 
 // Rutas públicas
-app.use('/api/auth', authRoutes);
-app.use('/api/users/login', usersRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 
 // Rutas protegidas
 app.use('/api/leads', requireAuth, leadsRoutes);
 app.use('/api/companies', requireAuth, companiesRoutes);
 app.use('/api/events', requireAuth, eventsRoutes);
-// Las rutas de usuarios que no son login también requieren autenticación
-app.use('/api/users', requireAuth, usersRoutes);
-
-// Manejo de errores
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(err.status || 500).json({
-    message: err.message || 'Error interno del servidor'
-  });
-});
+app.use('/api/templates', requireAuth, templatesRouter);
 
 export default app;

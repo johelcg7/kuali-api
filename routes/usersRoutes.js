@@ -10,14 +10,21 @@ import {
 
 const router = express.Router();
 
-// Rutas CRUD
-router.get('/', getUsers); // Obtener todos los usuarios
-router.get('/:id', getUserById); // Obtener un usuario por ID
-router.post('/', createUser); // Crear un nuevo usuario
-router.put('/:id', updateUser); // Actualizar un usuario existente
-router.delete('/:id', deleteUser); // Eliminar un usuario
-
-// Ruta de inicio de sesión
+// Ruta de inicio de sesión (debe ir antes de las rutas protegidas)
 router.post("/login", loginUser);
+
+// Rutas CRUD (protegidas)
+const requireAuth = (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  next();
+};
+
+router.get('/', requireAuth, getUsers);
+router.get('/:id', requireAuth, getUserById);
+router.post('/', requireAuth, createUser);
+router.put('/:id', requireAuth, updateUser);
+router.delete('/:id', requireAuth, deleteUser);
 
 export default router;

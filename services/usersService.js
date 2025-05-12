@@ -129,29 +129,39 @@ export const UsersService = {
   // Verificar credenciales de usuario
   verifyCredentials: async (email, password) => {
     if (!email || !password) {
+      console.log('Faltan credenciales:', { email: !!email, password: !!password });
       throw new Error('Email y contraseña son requeridos');
     }
 
+    console.log('Buscando usuario con email:', email);
     const user = await prisma.users.findUnique({
       where: { email },
     });
 
     if (!user) {
+      console.log('Usuario no encontrado');
       return null;
     }
 
+    console.log('Usuario encontrado:', { id: user.id, hasGoogleId: !!user.googleId, hasPassword: !!user.password });
+
     // Si el usuario se registró con Google, no permitir login manual
     if (user.googleId && !user.password) {
+      console.log('Usuario registrado con Google');
       throw new Error("Esta cuenta fue creada con Google. Por favor, usa el botón 'Continuar con Google'");
     }
 
-    // Verificar la contraseña
+    // Verificar que existe una contraseña
     if (!user.password) {
+      console.log('Usuario no tiene contraseña');
       return null;
     }
 
     try {
+      console.log('Comparando contraseñas');
       const isValid = await bcrypt.compare(password, user.password);
+      console.log('Resultado de comparación:', isValid);
+      
       if (!isValid) {
         return null;
       }
