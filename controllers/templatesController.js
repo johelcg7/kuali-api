@@ -1,4 +1,7 @@
 import { TemplatesService } from '../services/templatesService.js';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const TemplatesController = {
   getAll: async (req, res) => {
@@ -44,6 +47,22 @@ export const TemplatesController = {
       res.json({ message: 'Template deleted' });
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  },
+
+  sendMailToLead: async (req, res) => {
+    const { to, subject, body } = req.body;
+    try {
+      const data = await resend.emails.send({
+        from: 'onboarding@resend.dev', // Cambiado a dominio de prueba de Resend
+        to,
+        subject,
+        html: body,
+      });
+      res.json({ success: true, data });
+    } catch (error) {
+      console.error('Error al enviar correo:', error);
+      res.status(500).json({ error: 'Error al enviar correo', details: error.message });
     }
   },
 };
