@@ -28,17 +28,17 @@ const ensureDefaultRecordsExist = async () => {
       company_id: defaultCompany.id
     },
   });
-
-  // Verificar y crear usuario por defecto si no existe
+  // Usar upsert para el usuario por defecto usando el email como identificador único
   const defaultUser = await prisma.users.upsert({
-    where: { id: 1 },
+    where: { email: 'default@kuali.com' },
     update: {},
     create: {
       email: 'default@kuali.com',
       name: 'Usuario por defecto',
       password_google: 'default',
-      unique_code: 'DEFAULT001'
-    },
+      unique_code: 'DEFAULT001',
+      role: 'user'
+    }
   });
 
   return {
@@ -54,9 +54,11 @@ const createOrGetCompany = async (companyName) => {
       const defaultIds = await ensureDefaultRecordsExist();
       return { id: defaultIds.company_id };
     }
-
+    // Buscar si ya existe la empresa
+    const existing = await prisma.companies.findFirst({ where: { name: companyName } });
+    if (existing) return existing;
     // Crear nueva empresa
-    const newCompany = await prisma.companies.create({
+    return await prisma.companies.create({
       data: {
         name: companyName,
         sector: 'General',
@@ -64,8 +66,6 @@ const createOrGetCompany = async (companyName) => {
         employee_numbers: 1
       }
     });
-
-    return newCompany;
   } catch (error) {
     console.error('Error al crear empresa:', error);
     throw new Error('Error al crear la empresa: ' + error.message);
@@ -78,9 +78,11 @@ const createOrGetEvent = async (eventName, companyId) => {
       const defaultIds = await ensureDefaultRecordsExist();
       return { id: defaultIds.event_id };
     }
-
+    // Buscar si ya existe el evento
+    const existing = await prisma.events.findFirst({ where: { name: eventName, company_id: companyId } });
+    if (existing) return existing;
     // Crear nuevo evento
-    const newEvent = await prisma.events.create({
+    return await prisma.events.create({
       data: {
         name: eventName,
         type: 'General',
@@ -90,8 +92,6 @@ const createOrGetEvent = async (eventName, companyId) => {
         company_id: companyId
       }
     });
-
-    return newEvent;
   } catch (error) {
     console.error('Error al crear evento:', error);
     throw new Error('Error al crear el evento: ' + error.message);
@@ -103,7 +103,7 @@ export const LeadsService = {
     try {
       return await prisma.leads.findMany({
         include: {
-          users: true,
+          user: true, // corregido: era users
           company: true,
           events: true,
         }
@@ -119,7 +119,7 @@ export const LeadsService = {
       return await prisma.leads.findUnique({
         where: { id: Number(id) },
         include: {
-          users: true,
+          user: true, // corregido de users: true
           company: true,
           events: true,
         }
@@ -164,7 +164,7 @@ export const LeadsService = {
       return await prisma.leads.create({
         data: leadData,
         include: {
-          users: true,
+          user: true, // corregido: era users
           company: true,
           events: true,
         }
@@ -218,7 +218,7 @@ export const LeadsService = {
         },
         data: cleanData,
         include: {
-          users: true,
+          user: true, // corregido: era users
           company: true,
           events: true
         }
@@ -244,6 +244,22 @@ export const LeadsService = {
         throw new Error('Lead no encontrado');
       }
       throw new Error('Error al eliminar el lead');
+    }
+  },
+
+  getAllByUser: async (userId) => {
+    try {
+      return await prisma.leads.findMany({
+        where: { user_id: userId },
+        include: {
+          user: true, // corregido: era users
+          company: true,
+          events: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error en getAllByUser:', error);
+      throw new Error('Error al obtener los leads del usuario');
     }
   },
 };

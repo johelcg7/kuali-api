@@ -92,6 +92,7 @@ router.get(
     // Establecer la cookie de sesión explícitamente
     req.session.userId = req.user.id;
     req.session.userEmail = req.user.email;
+    req.session.userRole = req.user.role;
     
     req.session.save((err) => {
       if (err) {

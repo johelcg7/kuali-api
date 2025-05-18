@@ -34,7 +34,7 @@ model Leads {
   created_at   DateTime  @default(now()) @map("created_at")
   company      Companies @relation(fields: [company_id], references: [id])
   events       Events    @relation(fields: [event_id], references: [id])
-  users        Users     @relation("UserLeads", fields: [user_id], references: [id])
+  user         Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("leads")
 }
@@ -47,7 +47,8 @@ model Users {
   password_google String?  @map("password_google") // Mantenemos temporalmente para migración
   googleId        String?  @unique @map("google_id") // ID de Google para OAuth
   unique_code     String   @map("unique_code")
-  leads           Leads[]  @relation("UserLeads")
+  role            String   @default("user") @map("role") // user o admin
+  leads           Leads[]  
 
   @@map("users")
 }

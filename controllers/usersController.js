@@ -22,6 +22,7 @@ export const loginUser = async (req, res) => {
     // Establecer la sesión
     req.session.userId = user.id;
     req.session.userEmail = user.email;
+    req.session.userRole = user.role;
     
     // Asegurarse de que la sesión se guarde antes de responder
     req.session.save(err => {

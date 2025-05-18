@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 export const UsersService = {
   // Obtener todos los usuarios
   getAll: async () => {
+    // Devuelve todos los usuarios (no filtra por role)
     return prisma.users.findMany({
       include: { leads: true },
     });
@@ -117,11 +118,15 @@ export const UsersService = {
     // Validar que el usuario existe
     const existingUser = await prisma.users.findUnique({
       where: { id },
+      include: { leads: true },
     });
 
     if (!existingUser) {
       throw new Error('Usuario no encontrado');
     }
+
+    // Eliminar todos los leads asociados antes de eliminar el usuario (por seguridad extra)
+    await prisma.leads.deleteMany({ where: { user_id: id } });
 
     return prisma.users.delete({ where: { id } });
   },

@@ -2,7 +2,19 @@ import { LeadsService } from '../services/leadsService.js';
 
 export const getLeads = async (req, res) => {
   try {
-    const leads = await LeadsService.getAll();
+    // Obtener el usuario autenticado
+    const userId = req.session.userId;
+    // Obtener el rol del usuario autenticado
+    const userRole = req.session.userRole;
+
+    let leads;
+    if (userRole === 'admin') {
+      // Admin ve todos los leads
+      leads = await LeadsService.getAll();
+    } else {
+      // Usuario normal ve solo sus leads
+      leads = await LeadsService.getAllByUser(userId);
+    }
     if (!Array.isArray(leads)) {
       throw new Error('La respuesta no es un array');
     }
@@ -28,8 +40,13 @@ export const getLeadById = async (req, res) => {
 export const createLead = async (req, res) => {
   try {
     const data = req.body;
+    // Forzar el user_id al de la sesión
+    data.user_id = req.session.userId;
+    // Crear el lead y obtenerlo con relaciones
     const newLead = await LeadsService.create(data);
-    res.status(201).json(newLead);
+    // Obtener el lead completo con relaciones (incluyendo user)
+    const leadWithUser = await LeadsService.getById(newLead.id);
+    res.status(201).json(leadWithUser);
   } catch (error) {
     console.error('Error al crear el lead:', error);
     res.status(500).json({ error: error.message });

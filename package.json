@@ -24,8 +24,8 @@
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
-    "@prisma/client": "^6.7.0",
+    "@prisma/client": "^6.8.2",
     "nodemon": "^3.1.0",
-    "prisma": "^5.22.0"
+    "prisma": "^6.8.2"
   }
 }
