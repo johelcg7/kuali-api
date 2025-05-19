@@ -133,47 +133,65 @@ export const UsersService = {
 
   // Verificar credenciales de usuario
   verifyCredentials: async (email, password) => {
-    if (!email || !password) {
-      console.log('Faltan credenciales:', { email: !!email, password: !!password });
-      throw new Error('Email y contraseña son requeridos');
-    }
-
-    console.log('Buscando usuario con email:', email);
-    const user = await prisma.users.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      console.log('Usuario no encontrado');
-      return null;
-    }
-
-    console.log('Usuario encontrado:', { id: user.id, hasGoogleId: !!user.googleId, hasPassword: !!user.password });
-
-    // Si el usuario se registró con Google, no permitir login manual
-    if (user.googleId && !user.password) {
-      console.log('Usuario registrado con Google');
-      throw new Error("Esta cuenta fue creada con Google. Por favor, usa el botón 'Continuar con Google'");
-    }
-
-    // Verificar que existe una contraseña
-    if (!user.password) {
-      console.log('Usuario no tiene contraseña');
-      return null;
-    }
-
     try {
-      console.log('Comparando contraseñas');
-      const isValid = await bcrypt.compare(password, user.password);
-      console.log('Resultado de comparación:', isValid);
-      
-      if (!isValid) {
-        return null;
+      if (!email || !password) {
+        console.log('Faltan credenciales:', { email: !!email, password: !!password });
+        return { error: 'Email y contraseña son requeridos' };
       }
-      return user;
+
+      console.log('Buscando usuario con email:', email);
+      const user = await prisma.users.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          password: true,
+          googleId: true,
+          role: true,
+          unique_code: true
+        }
+      });
+
+      if (!user) {
+        console.log('Usuario no encontrado');
+        return { error: 'Credenciales inválidas' };
+      }
+
+      console.log('Usuario encontrado:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        hasGoogleId: !!user.googleId,
+        hasPassword: !!user.password
+      });
+      
+      // Si el usuario se registró con Google y no tiene contraseña local
+      if (user.googleId && !user.password) {
+        return { error: 'Este usuario debe iniciar sesión con Google' };
+      }
+      
+      // Verificar que exista una contraseña
+      if (!user.password) {
+        console.log('Usuario no tiene contraseña configurada');
+        return { error: 'Credenciales inválidas' };
+      }
+
+      console.log('Verificando contraseña para usuario:', user.email);
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      
+      if (!isValidPassword) {
+        console.log('Contraseña inválida para usuario:', user.email);
+        return { error: 'Credenciales inválidas' };
+      }
+
+      console.log('Autenticación exitosa para usuario:', user.email);
+      // No enviar la contraseña en la respuesta
+      const { password: _, ...userWithoutPassword } = user;
+      return { user: userWithoutPassword };
     } catch (error) {
-      console.error('Error al verificar la contraseña:', error);
-      throw new Error('Error en la verificación de credenciales');
+      console.error('Error en verificación de credenciales:', error);
+      return { error: 'Error durante la autenticación' };
     }
   },
 };

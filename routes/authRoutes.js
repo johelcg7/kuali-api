@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { logAction } from '../services/logAction.js';
 import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -37,21 +38,37 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const user = await prisma.users.upsert({
+        // Primero buscar el usuario
+        let existingUser = await prisma.users.findUnique({
           where: {
             email: profile.emails[0].value,
           },
-          update: {
-            googleId: profile.id,
-            name: profile.displayName,
-          },
-          create: {
-            email: profile.emails[0].value,
-            googleId: profile.id,
-            name: profile.displayName,
-            unique_code: Math.random().toString(36).substring(7),
-          },
         });
+
+        let user;
+        if (existingUser) {
+          // Si el usuario existe, actualiza solo googleId y nombre
+          user = await prisma.users.update({
+            where: {
+              email: profile.emails[0].value,
+            },
+            data: {
+              googleId: profile.id,
+              name: profile.displayName,
+            },
+          });
+        } else {
+          // Si el usuario no existe, créalo con rol 'user'
+          user = await prisma.users.create({
+            data: {
+              email: profile.emails[0].value,
+              googleId: profile.id,
+              name: profile.displayName,
+              role: 'user',
+              unique_code: Math.random().toString(36).substring(7),
+            },
+          });
+        }
         
         done(null, user);
       } catch (error) {
@@ -88,19 +105,48 @@ router.get(
     failureRedirect: 'http://localhost:5004/login',
     failureMessage: true,
   }),
-  (req, res) => {
-    // Establecer la cookie de sesión explícitamente
-    req.session.userId = req.user.id;
-    req.session.userEmail = req.user.email;
-    req.session.userRole = req.user.role;
-    
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error al guardar la sesión:', err);
-        return res.redirect('http://localhost:5004/login');
+  async (req, res) => {
+    try {
+      // Establecer la cookie de sesión explícitamente
+      req.session.userId = req.user.id;
+      req.session.userEmail = req.user.email;
+      req.session.userRole = req.user.role;
+
+      // Solo registrar login para usuarios no administradores
+      if (req.user.role !== 'admin') {
+        await logAction({
+          userId: req.user.id,
+          action: 'user_login',
+          details: {
+            email: req.user.email,
+            name: req.user.name,
+            role: req.user.role,
+            loginType: 'google',
+            ip: req.ip
+          }
+        });
       }
-      res.redirect('http://localhost:5004/');
-    });
+
+      // Guardar la sesión
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // Redirigir con los datos del usuario como parámetros de consulta
+      const userDataParams = new URLSearchParams({
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role
+      }).toString();
+      res.redirect(`http://localhost:5004/login?${userDataParams}`);
+    } catch (error) {
+      console.error('Error en el callback de Google:', error);
+      res.redirect('http://localhost:5004/login');
+    }
   }
 );
 
@@ -121,12 +167,13 @@ router.post('/register', async (req, res) => {
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear nuevo usuario
+    // Crear nuevo usuario siempre con rol 'user'
     const newUser = await prisma.users.create({
       data: {
         email,
         name,
         password: hashedPassword,
+        role: 'user',
         unique_code: Math.random().toString(36).substring(7),
       },
     });
@@ -134,23 +181,36 @@ router.post('/register', async (req, res) => {
     // Establecer la sesión
     req.session.userId = newUser.id;
     req.session.userEmail = newUser.email;
+    req.session.userRole = newUser.role;
 
-    // Guardar la sesión antes de responder
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error al guardar la sesión:', err);
-        return res.status(500).json({ error: 'Error al iniciar sesión después del registro' });
-      }
-
-      // Enviar respuesta exitosa
-      res.status(201).json({
-        message: 'Usuario registrado exitosamente',
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          name: newUser.name,
-        },
+    // Guardar la sesión de forma asíncrona
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
       });
+    });
+
+    // Registrar acción de registro (siempre se registra ya que será un usuario normal)
+    await logAction({
+      userId: newUser.id,
+      action: 'user_register',
+      details: {
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        ip: req.ip
+      }
+    });
+
+    res.status(201).json({
+      message: 'Usuario registrado exitosamente',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role
+      },
     });
   } catch (error) {
     console.error('Error en el registro:', error);
@@ -158,15 +218,27 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
   if (req.session.userId) {
-    res.json({ 
-      isAuthenticated: true, 
-      user: {
-        id: req.session.userId,
-        email: req.session.userEmail
-      } 
-    });
+    try {
+      // Obtener datos completos del usuario desde la base de datos
+      const user = await prisma.users.findUnique({
+        where: { id: req.session.userId }
+      });
+      
+      res.json({ 
+        isAuthenticated: true, 
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener los datos del usuario:', error);
+      res.status(500).json({ error: 'Error al obtener los datos del usuario' });
+    }
   } else {
     res.json({ isAuthenticated: false });
   }

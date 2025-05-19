@@ -1,4 +1,5 @@
 import { LeadsService } from '../services/leadsService.js';
+import { logAction } from '../services/logAction.js';
 
 export const getLeads = async (req, res) => {
   try {
@@ -46,6 +47,19 @@ export const createLead = async (req, res) => {
     const newLead = await LeadsService.create(data);
     // Obtener el lead completo con relaciones (incluyendo user)
     const leadWithUser = await LeadsService.getById(newLead.id);
+
+    // Registrar la acción de creación de lead con detalles en formato JSON
+    await logAction({
+      userId: req.session.userId,
+      leadId: leadWithUser.id,
+      action: 'create_lead',
+      details: { // Pasar un objeto para que logAction lo stringifique
+        name: leadWithUser.name,
+        email: leadWithUser.email,
+        created_by: req.session.userEmail || 'system',
+      },
+    });
+
     res.status(201).json(leadWithUser);
   } catch (error) {
     console.error('Error al crear el lead:', error);
@@ -80,7 +94,23 @@ export const updateLead = async (req, res) => {
     }
 
     const updatedLead = await LeadsService.update(leadId, data);
-    console.log('Lead actualizado:', updatedLead);
+    console.log('Lead actualizado:', updatedLead);    // Registrar la acción de actualización de lead con detalles de los cambios
+    await logAction({
+      userId: req.session.userId,
+      leadId: updatedLead.id,
+      action: 'update_lead',
+      details: JSON.stringify({
+        lead_name: updatedLead.name,
+        lead_email: updatedLead.email,
+        user: req.session.userEmail,
+        updated_at: new Date().toISOString(),
+        changes: {
+          ...data,
+          company_name: data.company_name || updatedLead.company?.name,
+          event_name: data.event_name || (updatedLead.events?.length > 0 ? updatedLead.events[0].name : null)
+        }
+      })
+    });
     
     res.json(updatedLead);
   } catch (error) {
@@ -95,7 +125,30 @@ export const updateLead = async (req, res) => {
 export const deleteLead = async (req, res) => {
   try {
     const { id } = req.params;
-    await LeadsService.delete(parseInt(id));
+    // Obtener el lead antes de eliminarlo para registrar sus detalles
+    const leadToDelete = await LeadsService.getById(parseInt(id));
+    await LeadsService.delete(parseInt(id));    // Registrar la acción de eliminación de lead con detalles completos
+    if (leadToDelete) {
+      await logAction({
+        userId: req.session.userId,
+        leadId: parseInt(id),
+        action: 'delete_lead',
+        details: JSON.stringify({
+          name: leadToDelete.name,
+          email: leadToDelete.email,
+          phone: leadToDelete.phone,
+          company: leadToDelete.company?.name,
+          event: leadToDelete.events?.length > 0 ? leadToDelete.events[0].name : null,
+          status: leadToDelete.status,
+          job_role: leadToDelete.job_role,
+          work_area: leadToDelete.work_area,
+          linkedin: leadToDelete.linkedin,
+          deleted_at: new Date().toISOString(),
+          deleted_by: req.session.userEmail
+        })
+      });
+    }
+
     res.status(204).end();
   } catch (error) {
     console.error('Error al eliminar el lead:', error);
