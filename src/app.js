@@ -12,6 +12,7 @@ import companiesRoutes from '../routes/companiesRoutes.js';
 import eventsRoutes from '../routes/eventsRoutes.js';
 import templatesRouter from '../routes/templatesRouter.js';
 import logsRoutes from '../routes/logsRoutes.js';
+import meetsRoutes from '../routes/meetsRoutes.js'; // Importar rutas de meets
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/api/leads', requireAuth, leadsRoutes);
 app.use('/api/companies', requireAuth, companiesRoutes);
 app.use('/api/events', requireAuth, eventsRoutes);
 app.use('/api/templates', requireAuth, templatesRouter);
+app.use('/api/meets', requireAuth, meetsRoutes); // Agregar ruta para meets
 app.use('/registros', requireAuth, requireAdmin, logsRoutes); // Nueva ruta para registros solo admin
 
 export default app;
