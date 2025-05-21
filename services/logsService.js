@@ -29,4 +29,14 @@ export const LogsService = {
       throw new Error('Error al eliminar el registro');
     }
   },
+
+  // Nueva función para eliminar todos los registros
+  deleteAll: async () => {
+    try {
+      return await prisma.logs.deleteMany();
+    } catch (error) {
+      console.error('Error al eliminar todos los registros:', error);
+      throw new Error('Error al eliminar todos los registros');
+    }
+  },
 };

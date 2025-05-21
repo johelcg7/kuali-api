@@ -6,7 +6,10 @@ const router = Router();
 // Ruta protegida solo para admin
 router.get('/', LogsController.getAll);
 
-// Nueva ruta para eliminar un registro por ID
+// Ruta para eliminar todos los registros
+router.delete('/', LogsController.deleteAll);
+
+// Ruta para eliminar un registro específico
 router.delete('/:id', LogsController.deleteLog);
 
 export default router;

@@ -32,4 +32,19 @@ export const LogsController = {
       res.status(500).json({ error: 'Error al eliminar el registro.', details: error.message });
     }
   },
+
+  // Nueva función para eliminar todos los registros
+  deleteAll: async (req, res) => {
+    // Solo permitir acceso al admin
+    if (!req.session.userEmail || req.session.userRole !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado: solo el administrador puede eliminar registros.' });
+    }
+    try {
+      await LogsService.deleteAll();
+      res.status(200).json({ message: 'Todos los registros han sido eliminados correctamente.' });
+    } catch (error) {
+      console.error('Error al eliminar todos los registros:', error);
+      res.status(500).json({ error: 'Error al eliminar los registros.', details: error.message });
+    }
+  },
 };
